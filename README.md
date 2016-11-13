@@ -8,6 +8,11 @@ Build using:
 mvn clean package
 ```
 
+Logs at: 
+```bash
+tail -f $FLINK_HOME/log/*
+```
+
 Open Dashboard:
 ```bash
 http://localhost:8081/
