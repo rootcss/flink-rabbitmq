@@ -18,10 +18,17 @@ import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 
 public class RabbitmqStreamProcessor extends RMQSource{
+
+    static String exchangeName          = "simpl_exchange";
+    static String queueName             = "simpl_spark_dev";
+    static String rabbitmqHostname      = "localhost";
+    static String rabbitmqVirtualHost   = "/";
+    static String rabbitmqUsername      = "rootcss";
+    static String rabbitmqPassword      = "indian";
+    static Integer rabbitmqPort         = 5672;
 
     private static Logger logger = LoggerFactory.getLogger(RabbitmqStreamProcessor.class);
 
@@ -31,21 +38,21 @@ public class RabbitmqStreamProcessor extends RMQSource{
 
     @Override
     protected void setupQueue() throws IOException {
-        AMQP.Queue.DeclareOk result = channel.queueDeclare("simpl_spark_dev", true, false, false, null);
-        channel.queueBind(result.getQueue(), "simpl_exchange", "*.*.*.*.*");
+        AMQP.Queue.DeclareOk result = channel.queueDeclare(queueName, true, false, false, null);
+        channel.queueBind(result.getQueue(), exchangeName, "*");
     }
 
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
 
         RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
-                .setHost("localhost").setPort(5672).setUserName("rootcss")
-                .setPassword("indian").setVirtualHost("/").build();
+                .setHost(rabbitmqHostname).setPort(rabbitmqPort).setUserName(rabbitmqUsername)
+                .setPassword(rabbitmqPassword).setVirtualHost(rabbitmqVirtualHost).build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         DataStream<String> dataStream = env.addSource(new RMQSource<String>(connectionConfig,
-                "simpl_spark_dev",
+                queueName,
                 new SimpleStringSchema()));
 
         DataStream<Tuple2<String, Integer>> pairs = dataStream.flatMap(new TextLengthCalculator());
@@ -62,4 +69,5 @@ public class RabbitmqStreamProcessor extends RMQSource{
         }
 
     }
+
 }
