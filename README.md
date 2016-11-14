@@ -1,3 +1,7 @@
+### Processing Rabbitmq's Stream with "Apache Flink"
+Read about it here: <a href="http://shekharsingh.com/apache-flink-rabbimq-streams-processor.html">http://shekharsingh.com/apache-flink-rabbimq-streams-processor.html</a>
+
+
 Execute using (Make sure flink & rabbitmq is up and running):
 ```bash
 flink run -c com.rootcss.flink.RabbitmqStreamProcessor target/flink-rabbitmq-0.1.jar
