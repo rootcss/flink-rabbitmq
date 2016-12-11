@@ -21,16 +21,8 @@ import java.io.IOException;
 
 public class RabbitmqMessageRateCalculator extends RMQSource {
 
-    static String exchangeName          = "simpl_exchange";
-    static String queueName             = "simpl_spark_dev";
-    static String rabbitmqHostname      = "localhost";
-    static String rabbitmqVirtualHost   = "/";
-    static String rabbitmqUsername      = "rootcss";
-    static String rabbitmqPassword      = "indian";
-    static boolean durableQueue         = false;
-    static Integer rabbitmqPort         = 5672;
-    static int windowSeconds            = 1;
-    static String outputFile            = "/Users/rootcss/infrastructure/codes/flink/flink-rabbitmq/output.out";
+    static int windowSeconds = 1;
+    static String outputFile = "/Users/rootcss/infrastructure/codes/flink/flink-rabbitmq/output.out";
 
     private static Logger logger = LoggerFactory.getLogger(RabbitmqStreamProcessor.class);
 
@@ -40,21 +32,21 @@ public class RabbitmqMessageRateCalculator extends RMQSource {
 
     @Override
     protected void setupQueue() throws IOException {
-        AMQP.Queue.DeclareOk result = channel.queueDeclare(queueName, true, durableQueue, false, null);
-        channel.queueBind(result.getQueue(), exchangeName, "*");
+        AMQP.Queue.DeclareOk result = channel.queueDeclare(RabbitmqConfig.queueName, true, RabbitmqConfig.durableQueue, false, null);
+        channel.queueBind(result.getQueue(), RabbitmqConfig.exchangeName, "*");
     }
 
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
 
         RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
-                .setHost(rabbitmqHostname).setPort(rabbitmqPort).setUserName(rabbitmqUsername)
-                .setPassword(rabbitmqPassword).setVirtualHost(rabbitmqVirtualHost).build();
+                .setHost(RabbitmqConfig.rabbitmqHostname).setPort(RabbitmqConfig.rabbitmqPort).setUserName(RabbitmqConfig.rabbitmqUsername)
+                .setPassword(RabbitmqConfig.rabbitmqPassword).setVirtualHost(RabbitmqConfig.rabbitmqVirtualHost).build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         DataStream<String> dataStream = env.addSource(new RMQSource<String>(connectionConfig,
-                queueName,
+                RabbitmqConfig.queueName,
                 new SimpleStringSchema()));
 
         DataStream<Tuple2<String, Integer>> pairs = dataStream
@@ -64,7 +56,7 @@ public class RabbitmqMessageRateCalculator extends RMQSource {
                 .sum(1);
 
         pairs.writeAsText(outputFile);
-        env.execute();
+        env.execute("Flink-Rabbitmq Stream Processor");
     }
 
     public static final class TextLengthCalculator implements FlatMapFunction<String, Tuple2<String, Integer>> {
