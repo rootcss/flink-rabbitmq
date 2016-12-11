@@ -22,3 +22,9 @@ Open Dashboard:
 http://localhost:8081/
 ```
 ![alt tag](doc/images/flink_dashboard.png)
+
+Other commands:
+```bash
+flink run -c com.rootcss.flink.RabbitmqWindowStreamProcessor target/flink-rabbitmq-0.1.jar --output /Users/rootcss/output.out --window 10
+flink run -c com.rootcss.flink.RabbitmqMessageRateCalculator target/flink-rabbitmq-0.1.jar --output /Users/rootcss/output2.out
+```
