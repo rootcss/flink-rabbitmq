@@ -7,6 +7,7 @@ package com.rootcss.flink;
 import com.rabbitmq.client.AMQP;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -20,9 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public class RabbitmqWindowStreamProcessor extends RMQSource {
-
-    static int windowSeconds            = 10;
-    static String outputFile            = "/Users/rootcss/infrastructure/codes/flink/flink-rabbitmq/output.out";
 
     private static Logger logger = LoggerFactory.getLogger(RabbitmqStreamProcessor.class);
 
@@ -38,6 +36,15 @@ public class RabbitmqWindowStreamProcessor extends RMQSource {
 
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
+
+        final ParameterTool params = ParameterTool.fromArgs(args);
+        int windowSeconds = 10;
+
+        if (params.has("window")) {
+            windowSeconds = Integer.parseInt(params.get("window"));
+        }
+
+        System.out.println("Using value " + windowSeconds + " for window interval. Use --window <value> to overwrite.");
 
         RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
                 .setHost(RabbitmqConfig.rabbitmqHostname).setPort(RabbitmqConfig.rabbitmqPort).setUserName(RabbitmqConfig.rabbitmqUsername)
@@ -55,7 +62,12 @@ public class RabbitmqWindowStreamProcessor extends RMQSource {
                 .timeWindow(Time.seconds(windowSeconds))
                 .sum(1);
 
-        pairs.writeAsText(outputFile);
+        if (params.has("output")) {
+            pairs.writeAsText(params.get("output"));
+        } else {
+            System.out.println("Printing result to stdout. Use --output to specify output path.");
+            pairs.print();
+        }
         env.execute("Flink-Rabbitmq Stream Processor");
     }
 
