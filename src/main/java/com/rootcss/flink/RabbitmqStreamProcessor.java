@@ -4,7 +4,6 @@ package com.rootcss.flink;
  * Created by rootcss on 13/11/16.
  */
 
-import com.rabbitmq.client.AMQP;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -14,36 +13,24 @@ import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.io.IOException;
-import com.rootcss.flink.RabbitmqConfig;
 
-public class RabbitmqStreamProcessor extends RMQSource{
-
-    private static Logger logger = LoggerFactory.getLogger(RabbitmqStreamProcessor.class);
+public class RabbitmqStreamProcessor extends FlinkRabbitmq {
 
     public RabbitmqStreamProcessor(RMQConnectionConfig rmqConnectionConfig, String queueName, DeserializationSchema deserializationSchema) {
         super(rmqConnectionConfig, queueName, deserializationSchema);
-    }
-
-    @Override
-    protected void setupQueue() throws IOException {
-        AMQP.Queue.DeclareOk result = channel.queueDeclare(RabbitmqConfig.queueName, true, RabbitmqConfig.durableQueue, false, null);
-        channel.queueBind(result.getQueue(),  RabbitmqConfig.exchangeName, "*");
     }
 
     public static void main(String[] args) throws Exception {
         logger.info("Starting Rabbitmq Stream Processor..");
 
         RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
-                .setHost(RabbitmqConfig.rabbitmqHostname).setPort(RabbitmqConfig.rabbitmqPort).setUserName(RabbitmqConfig.rabbitmqUsername)
-                .setPassword(RabbitmqConfig.rabbitmqPassword).setVirtualHost(RabbitmqConfig.rabbitmqVirtualHost).build();
+                .setHost(rabbitmqHostname).setPort(rabbitmqPort).setUserName(rabbitmqUsername)
+                .setPassword(rabbitmqPassword).setVirtualHost(rabbitmqVirtualHost).build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         DataStream<String> dataStream = env.addSource(new RMQSource<String>(connectionConfig,
-                RabbitmqConfig.queueName,
+                queueName,
                 new SimpleStringSchema()));
 
         DataStream<Tuple2<String, Integer>> pairs = dataStream.flatMap(new TextLengthCalculator());
